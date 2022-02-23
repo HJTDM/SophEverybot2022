@@ -110,21 +110,7 @@ public class Drivetrain extends SubsystemBase {
     if(Math.abs(twist) < 0.1){
       twist = 0;
     }
-    /*
-    Arcade Input Scaling - WIP
 
-    double sInput;
-    double lesserInput = Math.min(Math.abs(throttle), Math.abs(twist));
-    double greaterInput = Math.max(Math.abs(throttle), Math.abs(twist));
-    if(greaterInput > 0){
-      sInput = lesserInput/greaterInput + 1;
-    }
-    else{
-      sInput = 1;
-    }
-    throttle /= sInput;
-    twist /= sInput;
-    */
     throttle *= Math.abs(throttle) * 0.8; //cubes throttle input
     twist *= Math.abs(twist) * 0.6; //4ths twist input
     setSpeed(throttle + twist, throttle - twist); //sets speed of left and right motor
