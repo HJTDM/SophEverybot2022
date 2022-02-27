@@ -11,8 +11,15 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
+import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.wpilibj.ADIS16470_IMU;
+import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 public class Drivetrain extends SubsystemBase {
 
@@ -21,8 +28,15 @@ public class Drivetrain extends SubsystemBase {
   CANSparkMax leftBack = new CANSparkMax(12, MotorType.kBrushless);
   CANSparkMax rightBack = new CANSparkMax(10, MotorType.kBrushless);
 
+  MotorControllerGroup leftMotors = new MotorControllerGroup(leftFront, leftBack);
+  MotorControllerGroup rightMotors = new MotorControllerGroup(rightFront, rightBack);
+
   public RelativeEncoder leftEncoder = leftFront.getEncoder();
   public RelativeEncoder rightEncoder = rightFront.getEncoder();
+
+  public ADIS16470_IMU gyro = new ADIS16470_IMU();
+
+  private DifferentialDriveOdometry odometry = new DifferentialDriveOdometry(new Rotation2d(0));
 
   private static final Drivetrain drivetrain = new Drivetrain();
   public static Drivetrain getInstance(){
@@ -31,17 +45,19 @@ public class Drivetrain extends SubsystemBase {
 
   public Drivetrain() {
     formatMotors();
+    resetEncoders();
+    zeroHeading();
   }
 
-  private void formatMotors(){
+  private void formatMotors() {
     leftFront.restoreFactoryDefaults();
     leftBack.restoreFactoryDefaults();
     rightFront.restoreFactoryDefaults();
     rightBack.restoreFactoryDefaults();
-    leftFront.setSmartCurrentLimit(80);
-    leftBack.setSmartCurrentLimit(80);
-    rightFront.setSmartCurrentLimit(80);
-    rightBack.setSmartCurrentLimit(80);
+    leftFront.setSmartCurrentLimit(50);
+    leftBack.setSmartCurrentLimit(50);
+    rightFront.setSmartCurrentLimit(50);
+    rightBack.setSmartCurrentLimit(50);
     leftFront.setInverted(false); //inverts motors to right direction (front and back)
     rightFront.setInverted(true);
     leftBack.follow(leftFront); //back motor follows the front
@@ -111,9 +127,9 @@ public class Drivetrain extends SubsystemBase {
       twist = 0;
     }
 
-    throttle *= Math.abs(throttle) * 0.8; //cubes throttle input
-    twist *= Math.abs(twist) * 0.6; //4ths twist input
-    setSpeed(throttle + twist, throttle - twist); //sets speed of left and right motor
+    throttle *= Math.abs(throttle); //cubes throttle input
+    twist *= Math.abs(twist); //4ths twist input
+    setSpeed(throttle+twist, throttle-twist); //sets speed of left and right motor
     
     SmartDashboard.putNumber("Throttle", throttle);
     SmartDashboard.putNumber("Twist", twist);
@@ -155,7 +171,7 @@ public class Drivetrain extends SubsystemBase {
   }
 
   public void autonArcadeDrive(double throttle, double twist){
-    setSpeed(throttle + twist, throttle - twist); //sets speed of left and right motor
+    setSpeed(throttle+twist, throttle-twist); //sets speed of left and right motor
 
     SmartDashboard.putNumber("Throttle", throttle);
     SmartDashboard.putNumber("Twist", twist);
@@ -166,5 +182,73 @@ public class Drivetrain extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+    odometry.update(
+      new Rotation2d(gyro.getAngle()), getLeftEncoderPosition(), getRightEncoderPosition());
+    SmartDashboard.putNumber("left front", getLeftEncoderPosition());
+    SmartDashboard.putNumber("right front", getRightEncoderPosition());
+    SmartDashboard.putNumber("angle", gyro.getAngle());
+    SmartDashboard.putNumber("left motor current", leftFront.getOutputCurrent());
+    SmartDashboard.putNumber("right motor current", rightFront.getOutputCurrent());
   }
+
+  public Pose2d getPose(){
+    return odometry.getPoseMeters();
+  }
+
+  public DifferentialDriveWheelSpeeds getWheelSpeeds(){
+    return new DifferentialDriveWheelSpeeds(getLeftEncoderVelocity(), getRightEncoderVelocity());
+  }
+  public void resetOdometry(Pose2d pose){
+    resetEncoders();
+    zeroHeading();
+    odometry.resetPosition(pose, new Rotation2d(gyro.getAngle()));
+  }
+
+  public void tankDriveVolts(double leftVolts, double rightVolts) {
+    leftMotors.setVoltage(leftVolts);
+    rightMotors.setVoltage(rightVolts);
+  }
+
+  public void resetEncoders() {
+    leftEncoder.setPosition(0);
+    rightEncoder.setPosition(0);
+  }
+
+  public RelativeEncoder getLeftEncoder(){
+    return leftEncoder;
+  }
+
+  public RelativeEncoder getrightEncoder(){
+    return rightEncoder;
+  }
+
+  public double getLeftEncoderPosition(){
+    return leftEncoder.getPosition()*Constants.DrivetrainConstants.wheelC/Constants.DrivetrainConstants.gearRatio;
+  }
+
+  public double getRightEncoderPosition(){
+    return rightEncoder.getPosition()*Constants.DrivetrainConstants.wheelC/Constants.DrivetrainConstants.gearRatio;
+  }
+
+  public double getLeftEncoderVelocity(){
+    return leftEncoder.getVelocity()*Constants.DrivetrainConstants.wheelC/(Constants.DrivetrainConstants.gearRatio*60);
+  }
+
+  public double getRightEncoderVelocity(){
+    return rightEncoder.getVelocity()*Constants.DrivetrainConstants.wheelC/(Constants.DrivetrainConstants.gearRatio*60);
+  }
+
+  public void zeroHeading() {
+    gyro.reset();
+  }
+
+  public double getHeading() {
+    return gyro.getAngle();
+  }
+
+  public double getTurnRate() {
+    return gyro.getRate();
+  }
+
+  
 }

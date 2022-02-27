@@ -58,18 +58,18 @@ public class Arm extends SubsystemBase {
   public void ArmHold(){
     if (armIsUp) {
       if (Timer.getFPGATimestamp() - lastBurstTime < Constants.armTimeUp) {
-        armMotor.set(Constants.armTravelUp);
+        armMotor.set(Constants.ArmConstants.armTravelUp);
       }
       else{
-        armMotor.set(Constants.armHoldUp);
+        armMotor.set(Constants.ArmConstants.armHoldUp);
       }
     } 
     else if (!armIsUp) {
       if (Timer.getFPGATimestamp() - lastBurstTime < Constants.armTimeDown) {
-        armMotor.set(Constants.armTravelDown);
+        armMotor.set(Constants.ArmConstants.armTravelDown);
       }
       else{
-        armMotor.set(-Constants.armHoldDown);
+        armMotor.set(-Constants.ArmConstants.armHoldDown);
       }
     }
     SmartDashboard.putBoolean("Arm is Up?", armIsUp);
