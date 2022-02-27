@@ -24,21 +24,6 @@ public class TwoBallAuton extends CommandBase {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    /*
-    if(Timer.getFPGATimestamp() - initTime > 2.5 && Timer.getFPGATimestamp() - initTime < 3.5){
-      RobotContainer.intake.AutonIntakeOut();
-    }
-    if(Timer.getFPGATimestamp() - initTime > 3.5){
-      RobotContainer.intake.IntakeStop();
-    }
-    if(Timer.getFPGATimestamp() - initTime > 13 && Timer.getFPGATimestamp() - initTime < 14.5){
-      RobotContainer.drivetrain.arcadeDrive(-0.7, 0);
-    }
-    if(Timer.getFPGATimestamp() - initTime > 14.5){
-      RobotContainer.drivetrain.arcadeDrive(0, 0);
-    }
-    */
-
     if(Timer.getFPGATimestamp() - initTime > 1 && Timer.getFPGATimestamp() - initTime < 2){
       RobotContainer.intake.AutonIntakeIn();
       RobotContainer.drivetrain.arcadeDrive(0.66, 0);
